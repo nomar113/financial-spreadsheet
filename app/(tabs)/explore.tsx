@@ -2,8 +2,8 @@ import { ThemedText } from '@/components/ThemedText';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView, SectionList, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { RefreshControl, SafeAreaView, SectionList, StyleSheet, View } from 'react-native';
 
 interface Purchase {
   date: string;
@@ -17,6 +17,7 @@ interface Purchase {
 
 export default function TabTwoScreen() {
   const [purchasesGroupByDate, setPurchasesGroupByDate] = useState<Purchase[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   const fetchData = async () => {
     console.log(process.env.EXPO_PUBLIC_NOMAR_API_URL);
     try {
@@ -25,9 +26,15 @@ export default function TabTwoScreen() {
       setPurchasesGroupByDate(response.data);
     } catch (error) {
       console.error('Error fetching data:', error);
+    } finally {
+      setRefreshing(false);
     }
   };
   useEffect(() => {
+    fetchData();
+  }, []);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
     fetchData();
   }, []);
   const formatter = new Intl.NumberFormat('pt-BR', {
@@ -61,6 +68,8 @@ export default function TabTwoScreen() {
             </View>
           </View>
         )}
+        stickySectionHeadersEnabled={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={styles.listContent}
       />
     </SafeAreaView>
@@ -69,7 +78,7 @@ export default function TabTwoScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex: 0.90,
   },
   listContent: {
     paddingHorizontal: 16,
