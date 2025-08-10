@@ -1,17 +1,18 @@
+import axios from 'axios';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
+import { useState } from 'react';
 import { Button, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import WebView from 'react-native-webview';
+import * as scriptsToExtractDataByState from './../../invoices_scripts';
 
 export default function App() {
+  const [invoiceData, setInvoiceData] = useState('');
   const [permission, requestPermission] = useCameraPermissions();
-
   if (!permission) {
-    // Camera permissions are still loading.
     return <View />;
   }
-
   if (!permission.granted) {
-    // Camera permissions are not granted yet.
     return (
       <View style={styles.container}>
         <Text style={styles.message}>We need your permission to show the camera</Text>
@@ -19,17 +20,39 @@ export default function App() {
       </View>
     );
   }
-
+  const { extractDataFromRJ, extractDataFromGO } = scriptsToExtractDataByState;
+  const extractData = (invoiceData.includes('rj.gov.br') ? extractDataFromRJ : extractDataFromGO);
   return (
     <SafeAreaView style={styles.container}>
-      <CameraView 
-        style={styles.camera}
-        onBarcodeScanned={(scanningResult: BarcodeScanningResult) => {
-          console.log(scanningResult);
-          console.log(scanningResult.data);
-        }}
-      >
-      </CameraView>
+      {!invoiceData && 
+        <CameraView
+          style={styles.camera}
+          onBarcodeScanned={(scanningResult: BarcodeScanningResult) => {
+            setInvoiceData(scanningResult.data);
+          }}
+        >
+        </CameraView>
+      }
+      {invoiceData && 
+        <WebView
+          source={{uri: invoiceData}}
+          injectedJavaScript={extractData}
+          onMessage={async (event) => {
+              const purchase = JSON.parse(event.nativeEvent.data);
+              purchase.invoiceURL = invoiceData;
+              console.log('Mensagem recebida da WebView:', JSON.stringify(purchase, null, 2));
+              axios.post(`${process.env.EXPO_PUBLIC_NOMAR_API_URL}/purchases`, purchase)
+                .then(response => {
+                  console.log('Response:', response.data);
+                })
+                .catch(error => {
+                  console.error('Error:', error);
+                });
+            }}
+            style={{ flex: 1 }}
+        >
+        </WebView>
+      }
     </SafeAreaView>
   );
 }
