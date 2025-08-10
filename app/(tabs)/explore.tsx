@@ -1,110 +1,137 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+import axios from 'axios';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import React, { useEffect, useState } from 'react';
+import { SafeAreaView, SectionList, StyleSheet, View } from 'react-native';
+
+interface Purchase {
+  date: string;
+  purchases: {
+    id: number;
+    date: string;
+    merchantName: string;
+    total: string;
+  }[];
+}
 
 export default function TabTwoScreen() {
+  const [purchasesGroupByDate, setPurchasesGroupByDate] = useState<Purchase[]>([]);
+  const fetchData = async () => {
+    console.log(process.env.EXPO_PUBLIC_NOMAR_API_URL);
+    try {
+      const response = await axios.get<Purchase[]>(`${process.env.EXPO_PUBLIC_NOMAR_API_URL}/purchases`);
+      console.log('Success fetching data');
+      setPurchasesGroupByDate(response.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+  useEffect(() => {
+    fetchData();
+  }, []);
+  const formatter = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Custom fonts">
-        <ThemedText>
-          Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            custom fonts such as this one.
-          </ThemedText>
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+    <SafeAreaView style={styles.container}>
+      <SectionList
+        sections={purchasesGroupByDate.map((purchase) => ({ ...purchase, data: purchase.purchases }))}
+        keyExtractor={(item, index) => item.id.toString() + index}
+        renderSectionHeader={({ section: { date } }) => (
+          <ThemedText style={styles.sectionHeader}>{`${format(date, 'EEEE', { locale: ptBR })}, ${format(date, "d 'de' MMMM", { locale: ptBR })}`}</ThemedText>
+        )}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <View style={styles.row}>
+              <View style={styles.iconColumn}>
+                <View style={styles.iconCircle}>
+                  <ThemedText style={styles.icon}>{item.merchantName.substring(0, 2)}</ThemedText>
+                </View>
+                <ThemedText style={styles.time}>{format(item.date, 'HH:mm:ss', { locale: ptBR })}</ThemedText>
+              </View>
+              <View style={styles.ThemedTextColumn}>
+                <ThemedText style={styles.title}>{item.merchantName}</ThemedText>
+                <ThemedText style={styles.subtitle}>{item.merchantName}</ThemedText>
+              </View>
+              <View style={styles.valueColumn}>
+                <ThemedText style={styles.value}>{formatter.format(parseFloat(item.total))}</ThemedText>
+              </View>
+            </View>
+          </View>
+        )}
+        contentContainerStyle={styles.listContent}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1,
   },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  sectionHeader: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#fff",
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  card: {
+    backgroundColor: "#1c1c1e",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  iconColumn: {
+    alignItems: "center",
+    marginRight: 12,
+  },
+  iconCircle: {
+    backgroundColor: "#003366",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  icon: {
+    fontSize: 18,
+  },
+  time: {
+    fontSize: 12,
+    color: "#aaa",
+  },
+  ThemedTextColumn: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#fff",
+  },
+  subtitle: {
+    fontSize: 13,
+    color: "#aaa",
+    marginTop: 2,
+  },
+  valueColumn: {
+    alignItems: "flex-end",
+  },
+  value: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#fff",
   },
 });
