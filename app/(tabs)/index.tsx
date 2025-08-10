@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { useState } from 'react';
-import { Button, StyleSheet, Text, View } from 'react-native';
+import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import WebView from 'react-native-webview';
 import * as scriptsToExtractDataByState from './../../invoices_scripts';
@@ -22,6 +22,9 @@ export default function App() {
   }
   const { extractDataFromRJ, extractDataFromGO } = scriptsToExtractDataByState;
   const extractData = (invoiceData.includes('rj.gov.br') ? extractDataFromRJ : extractDataFromGO);
+  const closeWebView = () => {
+    setInvoiceData('');
+  };
   return (
     <SafeAreaView style={styles.container}>
       {!invoiceData && 
@@ -34,24 +37,31 @@ export default function App() {
         </CameraView>
       }
       {invoiceData && 
-        <WebView
-          source={{uri: invoiceData}}
-          injectedJavaScript={extractData}
-          onMessage={async (event) => {
-              const purchase = JSON.parse(event.nativeEvent.data);
-              purchase.invoiceURL = invoiceData;
-              console.log('Mensagem recebida da WebView:', JSON.stringify(purchase, null, 2));
-              axios.post(`${process.env.EXPO_PUBLIC_NOMAR_API_URL}/purchases`, purchase)
-                .then(response => {
-                  console.log('Response:', response.data);
-                })
-                .catch(error => {
-                  console.error('Error:', error);
-                });
-            }}
-            style={{ flex: 1 }}
-        >
-        </WebView>
+        <View style={styles.container}>
+          <WebView
+            style={styles.container}
+            source={{uri: invoiceData}}
+            injectedJavaScript={extractData}
+            onMessage={async (event) => {
+                console.log(invoiceData);
+                const purchase = JSON.parse(event.nativeEvent.data);
+                purchase.invoiceURL = invoiceData;
+                console.log('Mensagem recebida da WebView:', JSON.stringify(purchase, null, 2));
+                axios.post(`${process.env.EXPO_PUBLIC_NOMAR_API_URL}/purchases`, purchase)
+                  .then(response => {
+                    console.log('Response:', response.data);
+                  })
+                  .catch(error => {
+                    console.error('Error:', error);
+                  });
+                setInvoiceData('');
+              }}
+          >
+          </WebView>
+          <TouchableOpacity style={styles.button}>
+            <Button title="Close WebView" onPress={closeWebView} />
+          </TouchableOpacity>
+        </View>
       }
     </SafeAreaView>
   );
@@ -69,20 +79,9 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
   },
-  buttonContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    backgroundColor: 'transparent',
-    margin: 64,
-  },
   button: {
-    flex: 1,
-    alignSelf: 'flex-end',
+    flex: 0.05,
+    alignSelf: 'center',
     alignItems: 'center',
-  },
-  text: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
   },
 });
