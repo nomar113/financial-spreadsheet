@@ -42,6 +42,8 @@ export default function App() {
           style={styles.container}
           source={{uri: invoiceData}}
           injectedJavaScript={extractData}
+          mixedContentMode="always"
+          originWhitelist={['*']}
           onMessage={async (event) => {
               console.log(invoiceData);
               const purchase = JSON.parse(event.nativeEvent.data);
