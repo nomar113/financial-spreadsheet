@@ -47,7 +47,9 @@ export default function TabTwoScreen() {
         sections={purchasesGroupByDate.map((purchase) => ({ ...purchase, data: purchase.purchases }))}
         keyExtractor={(item, index) => item.id.toString() + index}
         renderSectionHeader={({ section: { date } }) => (
-          <ThemedText style={styles.sectionHeader}>{`${format(date, 'EEEE', { locale: ptBR })}, ${format(date, "d 'de' MMMM", { locale: ptBR })}`}</ThemedText>
+          <ThemedText style={styles.sectionHeader}>
+            {`${format(new Date(`${date}T12:00`), 'EEEE', { locale: ptBR })}, ${format(new Date(`${date}T12:00`), "d 'de' MMMM", { locale: ptBR })}`}
+            </ThemedText>
         )}
         renderItem={({ item }) => (
           <View style={styles.card}>
