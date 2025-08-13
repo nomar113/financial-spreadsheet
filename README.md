@@ -1,3 +1,23 @@
+# Financial Spreadsheet
+### because your data is yours
+
+Scan the QRCode in brazilian invoice and save the purchase data in a google spreadsheet 
+
+### run local
+```bash
+npx expo start
+```
+
+### submit to Apple Testflight
+```bash
+npx testflight
+```
+
+### check Expo project health
+```bash
+npx expo-doctor --verbose
+```
+
 # Welcome to your Expo app 👋
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
