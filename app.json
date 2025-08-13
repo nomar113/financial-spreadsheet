@@ -54,6 +54,12 @@
         "projectId": "f994c7d9-dca3-46fd-91ff-6a8ae4564964"
       }
     },
-    "owner": "nomar113"
+    "owner": "nomar113",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f994c7d9-dca3-46fd-91ff-6a8ae4564964"
+    }
   }
 }
